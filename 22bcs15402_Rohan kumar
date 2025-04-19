@@ -1,0 +1,172 @@
+Easy Problem:
+
+public class Course {
+    private String courseName;
+    private int duration;
+
+    // Constructors
+    public Course(String courseName, int duration) {
+        this.courseName = courseName;
+        this.duration = duration;
+    }
+
+    // Getters
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+}
+
+public class Student {
+    private String name;
+    private Course course;
+
+    // Constructor
+    public Student(String name, Course course) {
+        this.name = name;
+        this.course = course;
+    }
+
+    public void displayDetails() {
+        System.out.println("Name: " + name);
+        System.out.println("Course: " + course.getCourseName());
+        System.out.println("Duration: " + course.getDuration() + " months");
+    }
+}
+
+import org.springframework.context.annotation.*;
+
+@Configuration
+public class AppConfig {
+
+    @Bean
+    public Course course() {
+        return new Course("Java Spring", 3);
+    }
+
+    @Bean
+    public Student student() {
+        return new Student("Rohan", course());
+    }
+}
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class MainApp {
+    public static void main(String[] args) {
+        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        Student s = context.getBean(Student.class);
+        s.displayDetails();
+    }
+}
+
+Medium Problem:
+<hibernate-configuration>
+  <session-factory>
+    <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+    <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/testdb</property>
+    <property name="hibernate.connection.username">root</property>
+    <property name="hibernate.connection.password">yourpassword</property>
+    <property name="hibernate.dialect">org.hibernate.dialect.MySQL8Dialect</property>
+    <property name="hibernate.hbm2ddl.auto">update</property>
+    <mapping class="Student"/>
+  </session-factory>
+</hibernate-configuration>
+
+import javax.persistence.*;
+
+@Entity
+public class Student {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    private String name;
+    private int age;
+
+    // Constructors, Getters, Setters
+}
+public class HibernateUtil {
+    private static SessionFactory factory;
+
+    static {
+        try {
+            factory = new Configuration().configure().buildSessionFactory();
+        } catch (Exception e) {
+            System.out.println("Error: " + e);
+        }
+    }
+
+    public static SessionFactory getSessionFactory() {
+        return factory;
+    }
+}
+public class StudentCRUD {
+    public static void main(String[] args) {
+        Session session = HibernateUtil.getSessionFactory().openSession();
+        Transaction tx = session.beginTransaction();
+
+        // CREATE
+        Student s = new Student();
+        s.setName("Rohan");
+        s.setAge(21);
+        session.save(s);
+
+        tx.commit();
+        session.close();
+        System.out.println("Student saved!");
+    }
+}
+
+Hard Problem:
+@Entity
+public class Account {
+    @Id
+    private int accNo;
+    private double balance;
+
+    // Getters and Setters
+}
+
+@Entity
+public class TransactionLog {
+    @Id
+    @GeneratedValue
+    private int id;
+    private int fromAcc;
+    private int toAcc;
+    private double amount;
+    private String status;
+}
+@Service
+public class BankService {
+
+    @Autowired
+    private SessionFactory sessionFactory;
+
+    @Transactional
+    public void transfer(int from, int to, double amount) {
+        Session session = sessionFactory.getCurrentSession();
+
+        Account sender = session.get(Account.class, from);
+        Account receiver = session.get(Account.class, to);
+
+        if (sender.getBalance() >= amount) {
+            sender.setBalance(sender.getBalance() - amount);
+            receiver.setBalance(receiver.getBalance() + amount);
+
+            TransactionLog log = new TransactionLog();
+            log.setFromAcc(from);
+            log.setToAcc(to);
+            log.setAmount(amount);
+            log.setStatus("Success");
+
+            session.save(log);
+        } else {
+            throw new RuntimeException("Insufficient funds");
+        }
+    }
+}
+--------------------------------
